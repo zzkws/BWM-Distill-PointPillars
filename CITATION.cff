@@ -1,0 +1,108 @@
+cff-version: 1.2.0
+message: "If you use this code or its findings, please cite both the software and the thesis below."
+title: "BWM-Distill-PointPillars: Beam-Wise Mixing Consistency for BEV Feature Distillation"
+abstract: >-
+  Training-time-only constraints that transfer a CenterPoint-pillar BEV encoder
+  into a stock PointPillars detector on nuScenes. Combines L2-normalized BEV
+  feature distillation with a beam-wise point-cloud mixing consistency
+  regularizer, improving mAP and NDS at zero inference cost.
+type: software
+license: MIT
+version: "1.0.0"
+date-released: "2026-08-18"
+repository-code: "https://github.com/zzkws/BWM-Distill-PointPillars"
+keywords:
+  - 3D object detection
+  - LiDAR
+  - knowledge distillation
+  - consistency regularization
+  - PointPillars
+  - CenterPoint
+  - nuScenes
+  - autonomous driving
+authors:
+  - family-names: Zhou
+    given-names: Zikang
+    affiliation: Xiamen University
+
+preferred-citation:
+  type: thesis
+  thesis-type: "Bachelor's Thesis"
+  title: "Beam-Wise Mixing Consistency for BEV Feature Distillation in LiDAR-Based 3D Object Detection"
+  year: 2026
+  institution:
+    name: Xiamen University
+  authors:
+    - family-names: Zhou
+      given-names: Zikang
+      affiliation: Xiamen University
+
+references:
+  - type: software
+    title: "OpenPCDet: An Open-source Toolbox for 3D Object Detection from Point Clouds"
+    year: 2020
+    url: "https://github.com/open-mmlab/OpenPCDet"
+    authors:
+      - name: "OpenPCDet Development Team"
+  - type: conference-paper
+    title: "PointPillars: Fast Encoders for Object Detection from Point Clouds"
+    year: 2019
+    collection-title: "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)"
+    authors:
+      - family-names: Lang
+        given-names: "Alex H."
+      - family-names: Vora
+        given-names: Sourabh
+      - family-names: Caesar
+        given-names: Holger
+      - family-names: Zhou
+        given-names: Lubing
+      - family-names: Yang
+        given-names: Jiong
+      - family-names: Beijbom
+        given-names: Oscar
+  - type: conference-paper
+    title: "Center-based 3D Object Detection and Tracking"
+    year: 2021
+    collection-title: "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)"
+    authors:
+      - family-names: Yin
+        given-names: Tianwei
+      - family-names: Zhou
+        given-names: Xingyi
+      - family-names: "Krähenbühl"
+        given-names: Philipp
+  - type: conference-paper
+    title: "LaserMix for Semi-Supervised LiDAR Semantic Segmentation"
+    year: 2023
+    collection-title: "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)"
+    authors:
+      - family-names: Kong
+        given-names: Lingdong
+      - family-names: Ren
+        given-names: Jiawei
+      - family-names: Pan
+        given-names: Liang
+      - family-names: Liu
+        given-names: Ziwei
+  - type: conference-paper
+    title: "BEVFusion: Multi-Task Multi-Sensor Fusion with Unified Bird's-Eye View Representation"
+    year: 2023
+    collection-title: "IEEE International Conference on Robotics and Automation (ICRA)"
+    start: 2774
+    end: 2781
+    authors:
+      - family-names: Liu
+        given-names: Zhijian
+      - family-names: Tang
+        given-names: Haotian
+      - family-names: Amini
+        given-names: Alexander
+      - family-names: Yang
+        given-names: Xinyu
+      - family-names: Mao
+        given-names: Huizi
+      - family-names: Rus
+        given-names: Daniela
+      - family-names: Han
+        given-names: Song
