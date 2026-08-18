@@ -1,0 +1,8 @@
+metric,better,exp1_baseline,exp2_distill,exp3_distill_bwm,teacher_centerpoint
+mAP,higher,0.3461,0.3994,0.4070,0.5003
+NDS,higher,0.4951,0.5391,0.5468,0.6071
+mATE,lower,0.3843,0.3721,0.3670,0.3113
+mASE,lower,0.2695,0.2663,0.2625,0.2604
+mAOE,lower,0.4295,0.4257,0.3884,0.4288
+mAVE,lower,0.4947,0.3444,0.3504,0.2389
+mAAE,lower,0.2009,0.1973,0.1987,0.1914
