@@ -1,0 +1,306 @@
+CLASS_NAMES: ['car','truck', 'construction_vehicle', 'bus', 'trailer',
+              'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
+
+DATA_CONFIG:
+    _BASE_CONFIG_: cfgs/dataset_configs/nuscenes_dataset.yaml
+
+    POINT_CLOUD_RANGE: [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+    DATA_PROCESSOR:
+        -   NAME: mask_points_and_boxes_outside_range
+            REMOVE_OUTSIDE_BOXES: True
+
+        -   NAME: shuffle_points
+            SHUFFLE_ENABLED: {
+                'train': True,
+                'test': True
+            }
+
+        # Dynamic pillars: the dataloader does NOT voxelize, DynPillarVFE
+        # consumes raw points. Identical in all three experiments -- see the
+        # note at the bottom of this file for why the baseline was moved off
+        # the static PillarVFE.
+        -   NAME: transform_points_to_voxels_placeholder
+            VOXEL_SIZE: [0.2, 0.2, 8.0]
+
+MODEL:
+    NAME: ConsistencyDistillPP
+
+    # ---- distillation (inherited from exp 2, keep identical) ----
+    TEACHER_CFG_FILE: cfgs/nuscenes_models/cbgs_dyn_pp_centerpoint.yaml
+    TEACHER_CKPT: /root/ckpt/cbgs_pp_centerpoint_nds6070.pth
+
+    NORMALIZE_FEATURES: True
+    KD_LOSS_WEIGHT: 1.0
+    WARMUP_STEPS: 500
+
+    # ---- beam-wise mixing (exp 3, the only addition over exp 2) ----
+    CONS_WEIGHT: 1.0
+    BWM:
+        ENABLED: True
+        # Number of pitch bands, resampled every iteration.
+        NUM_AREAS: [3, 4, 5, 6]
+        # nuScenes ships a 32-beam Velodyne HDL-32E: +10 to -30 degrees.
+        # Getting this wrong is the most likely way to make BWM a no-op.
+        PITCH_RANGE_DEG: [-30.0, 10.0]
+        # uniform  = equal width in pitch, as in LaserMix
+        # quantile = equal point count per band. Try this if bwm_partner_ratio
+        #            drifts away from 0.5, which happens on a 32-beam sensor
+        #            because returns bunch up near the horizon.
+        BAND_MODE: uniform
+        # LiDAR height above ground, negative. Only fills BEV cells that no
+        # point lands in.
+        GROUND_Z: -1.8
+        # raster   = mask built from where the mixed points actually landed
+        # analytic = pure concentric rings from the flat-ground model
+        MASK_MODE: raster
+        SOFT_MASK: True
+
+    # ---- student, byte-identical across exp 1 / 2 / 3 ----
+    VFE:
+        NAME: DynPillarVFE
+        WITH_DISTANCE: False
+        USE_ABSLOTE_XYZ: True
+        USE_NORM: True
+        NUM_FILTERS: [64, 64]
+
+    MAP_TO_BEV:
+        NAME: PointPillarScatter
+        NUM_BEV_FEATURES: 64
+
+    BACKBONE_2D:
+        NAME: BaseBEVBackbone
+        LAYER_NUMS: [3, 5, 5]
+        LAYER_STRIDES: [2, 2, 2]
+        NUM_FILTERS: [64, 128, 256]
+        UPSAMPLE_STRIDES: [0.5, 1, 2]
+        NUM_UPSAMPLE_FILTERS: [128, 128, 128]
+
+    DENSE_HEAD:
+        NAME: AnchorHeadMulti
+        CLASS_AGNOSTIC: False
+
+        DIR_OFFSET: 0.78539
+        DIR_LIMIT_OFFSET: 0.0
+        NUM_DIR_BINS: 2
+
+        USE_MULTIHEAD: True
+        SEPARATE_MULTIHEAD: True
+        ANCHOR_GENERATOR_CONFIG: [
+            {
+                'class_name': car,
+                'anchor_sizes': [[4.63, 1.97, 1.74]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-0.95],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.6,
+                'unmatched_threshold': 0.45
+            },
+            {
+                'class_name': truck,
+                'anchor_sizes': [[6.93, 2.51, 2.84]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-0.6],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.55,
+                'unmatched_threshold': 0.4
+            },
+            {
+                'class_name': construction_vehicle,
+                'anchor_sizes': [[6.37, 2.85, 3.19]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-0.225],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.5,
+                'unmatched_threshold': 0.35
+            },
+            {
+                'class_name': bus,
+                'anchor_sizes': [[10.5, 2.94, 3.47]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-0.085],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.55,
+                'unmatched_threshold': 0.4
+            },
+            {
+                'class_name': trailer,
+                'anchor_sizes': [[12.29, 2.90, 3.87]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [0.115],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.5,
+                'unmatched_threshold': 0.35
+            },
+            {
+                'class_name': barrier,
+                'anchor_sizes': [[0.50, 2.53, 0.98]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-1.33],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.55,
+                'unmatched_threshold': 0.4
+            },
+            {
+                'class_name': motorcycle,
+                'anchor_sizes': [[2.11, 0.77, 1.47]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-1.085],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.5,
+                'unmatched_threshold': 0.3
+            },
+            {
+                'class_name': bicycle,
+                'anchor_sizes': [[1.70, 0.60, 1.28]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-1.18],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.5,
+                'unmatched_threshold': 0.35
+            },
+            {
+                'class_name': pedestrian,
+                'anchor_sizes': [[0.73, 0.67, 1.77]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-0.935],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.6,
+                'unmatched_threshold': 0.4
+            },
+            {
+                'class_name': traffic_cone,
+                'anchor_sizes': [[0.41, 0.41, 1.07]],
+                'anchor_rotations': [0, 1.57],
+                'anchor_bottom_heights': [-1.285],
+                'align_center': False,
+                'feature_map_stride': 4,
+                'matched_threshold': 0.6,
+                'unmatched_threshold': 0.4
+            },
+        ]
+
+        SHARED_CONV_NUM_FILTER: 64
+
+        RPN_HEAD_CFGS: [
+            {
+                'HEAD_CLS_NAME': ['car'],
+            },
+            {
+                'HEAD_CLS_NAME': ['truck', 'construction_vehicle'],
+            },
+            {
+                'HEAD_CLS_NAME': ['bus', 'trailer'],
+            },
+            {
+                'HEAD_CLS_NAME': ['barrier'],
+            },
+            {
+                'HEAD_CLS_NAME': ['motorcycle', 'bicycle'],
+            },
+            {
+                'HEAD_CLS_NAME': ['pedestrian', 'traffic_cone'],
+            },
+        ]
+        SEPARATE_REG_CONFIG:
+            NUM_MIDDLE_CONV: 1
+            NUM_MIDDLE_FILTER: 64
+            REG_LIST: ['reg:2', 'height:1', 'size:3', 'angle:2', 'velo:2']
+
+        TARGET_ASSIGNER_CONFIG:
+            NAME: AxisAlignedTargetAssigner
+            POS_FRACTION: -1.0
+            SAMPLE_SIZE: 512
+            NORM_BY_NUM_EXAMPLES: False
+            MATCH_HEIGHT: False
+            BOX_CODER: ResidualCoder
+            BOX_CODER_CONFIG: {
+                'code_size': 9,
+                'encode_angle_by_sincos': True
+            }
+
+        LOSS_CONFIG:
+            REG_LOSS_TYPE: WeightedL1Loss
+            LOSS_WEIGHTS: {
+                'pos_cls_weight': 1.0,
+                'neg_cls_weight': 2.0,
+                'cls_weight': 1.0,
+                'loc_weight': 0.25,
+                'dir_weight': 0.2,
+                'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2]
+            }
+
+    POST_PROCESSING:
+        RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
+        SCORE_THRESH: 0.1
+        OUTPUT_RAW_SCORE: False
+
+        EVAL_METRIC: kitti
+
+        NMS_CONFIG:
+            MULTI_CLASSES_NMS: True
+            NMS_TYPE: nms_gpu
+            NMS_THRESH: 0.2
+            NMS_PRE_MAXSIZE: 1000
+            NMS_POST_MAXSIZE: 83
+
+
+# ---- optimization, byte-identical across exp 1 / 2 / 3 ----
+# Changing any of these means changing all three files, otherwise the
+# comparison stops being a comparison.
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 4
+    NUM_EPOCHS: 20
+
+    OPTIMIZER: adam_onecycle
+    LR: 0.001
+    WEIGHT_DECAY: 0.01
+    MOMENTUM: 0.9
+
+    MOMS: [0.95, 0.85]
+    PCT_START: 0.4
+    DIV_FACTOR: 10
+    DECAY_STEP_LIST: [35, 45]
+    LR_DECAY: 0.1
+    LR_CLIP: 0.0000001
+
+    LR_WARMUP: False
+    WARMUP_EPOCH: 1
+
+    GRAD_NORM_CLIP: 10
+
+# ===========================================================================
+# exp 3 -- exp 2 plus beam-wise mixing consistency.
+#
+# Only difference from exp 2: CONS_WEIGHT and the BWM block. The KD term runs
+# through the exact same code path (ConsistencyDistillPP subclasses
+# DistillPointPillar), so any delta is attributable to the consistency term.
+#
+# Cost: ~2.3x the exp 1 step time (three forwards per step). If this OOMs,
+# BATCH_SIZE_PER_GPU can drop to 2 -- but then it has to drop in all three
+# files, since batch size changes BN statistics and the LR schedule.
+#
+# Metrics to watch, beyond exp 2's:
+#   bwm_partner_ratio  fraction of points taken from the partner scene. Should
+#                      sit near 0.5. Far off means the bands are unbalanced and
+#                      little real mixing happens, in which case cons_loss just
+#                      converges onto kd_loss and exp 3 degenerates into exp 2.
+#   bwm_mask_mean      fraction of BEV *area* fed by the sample itself. NOT
+#                      expected to be 0.5: with uniform pitch bands the far
+#                      field collapses into a single band, so the area is
+#                      skewed even when the point split is balanced.
+#
+# Further ablations, once the main three are in:
+#   CONS_WEIGHT: 0.0          isolates the cost of the third forward alone
+#   BWM.MASK_MODE: analytic   tells you whether raster's extra cost pays off
+#   BWM.BAND_MODE: quantile   fixes an unbalanced bwm_partner_ratio
+#   BWM.NUM_AREAS: [4]        removes the band-count randomness
+# ===========================================================================
