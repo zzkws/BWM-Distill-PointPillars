@@ -1,0 +1,48 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# ---- OpenPCDet artefacts ----
+output/
+outputs/
+log/
+logs/
+*.log
+tensorboard/
+tb_log/
+events.out.tfevents.*
+
+# ---- Model weights ----
+ckpt/
+ckpts/
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+
+# ---- Datasets ----
+# nuScenes and its generated infos must never be committed.
+data/
+*.pkl
+*.bin
+*.npy
+*.db
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
